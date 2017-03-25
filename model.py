@@ -25,21 +25,40 @@ import keras
 from keras.layers import Convolution2D, MaxPooling2D, Activation, Dropout
 import tensorflow as tf
 
+
+correction = 0.2
+dataSets = [
+#"./dataSet/1_anti_normal_1/",
+#            "./dataSet/1_clock_normal_1/",
+##            "./dataSet/1_clock_normal_2/" ## have problem
+#            "./dataSet/1_anti_normal_2/",
+#            "./dataSet/1_clock_recover_1/",
+#            "./dataSet/1_anti_recover_1/",
+            "./dataSet/2_clock_normal_1/",
+            "./dataSet/2_anti_normal_1/",  
+            "./dataSet/2_clock_normal_2/",
+            "./dataSet/2_anti_normal_2/",            
+            ]
+
 samples = []
-with open('./dataSet/track1_1/driving_log.csv') as csvfile:
-    reader = csv.reader(csvfile)
-    for line in reader:
-        samples.append(line)
-with open('./dataSet/track1_2/driving_log.csv') as csvfile:
-    reader = csv.reader(csvfile)
-    for line in reader:
-        samples.append(line)
+
+def addFiles(folderPath):  
+    with open(folderPath+'driving_log.csv') as csvfile:
+        reader = csv.reader(csvfile)
+        for line in reader:
+            samples.append(line+[folderPath])
+
+
+
+for path in dataSets:
+    addFiles(path)
         
 train_samples, validation_samples = train_test_split(samples, test_size=0.2)
 
-#TODO shuffle data
+#shuffle data
+sklearn.utils.shuffle(train_samples)
 
-def generator(samples, batch_size=32):
+def generator(samples, batch_size=32, training=True):
     num_samples = len(samples)
     while 1: # Loop forever so the generator never terminates
 #        shuffle(samples)
@@ -49,11 +68,30 @@ def generator(samples, batch_size=32):
             images = []
             angles = []
             for batch_sample in batch_samples:
-                name = './dataSet/track1_1/IMG/'+batch_sample[0].split('/')[-1]
-                center_image = cv2.imread(name)
+                center_name = batch_sample[-1]+'IMG/'+batch_sample[0].split('/')[-1]
+                center_image = cv2.imread(center_name)                
                 center_angle = float(batch_sample[3])
+                
                 images.append(center_image)
                 angles.append(center_angle)
+                
+                if training:
+                    
+                    left_name = batch_sample[-1]+'IMG/'+batch_sample[1].split('/')[-1]
+                    left_image = cv2.imread(left_name)                
+                    left_angle = float(batch_sample[3])+ correction
+                    
+                    right_name = batch_sample[-1]+'IMG/'+batch_sample[2].split('/')[-1]
+                    right_image = cv2.imread(right_name)                
+                    right_angle = float(batch_sample[3])- correction
+                    
+        
+                    
+                    images.append(left_image)
+                    angles.append(left_angle)
+                    
+                    images.append(right_image)
+                    angles.append(right_angle)
 
             # trim image to only see section with road
             X_train = np.array(images)
@@ -61,8 +99,8 @@ def generator(samples, batch_size=32):
             yield sklearn.utils.shuffle(X_train, y_train)
 
 # compile and train the model using the generator function
-train_generator = generator(train_samples, batch_size=32)
-validation_generator = generator(validation_samples, batch_size=32)
+train_generator = generator(train_samples, batch_size=32, training=True)
+validation_generator = generator(validation_samples, batch_size=32, training=False)
 
 col, row, ch = 160, 320, 3  # Trimmed image format
 
@@ -114,7 +152,7 @@ tfBoard = keras.callbacks.TensorBoard(log_dir='./logs', histogram_freq=2, write_
 
 model.compile(loss='mse', optimizer='adam',  metrics=['accuracy'])
 history_object = model.fit_generator(train_generator, 
-                                     samples_per_epoch= len(train_samples), 
+                                     samples_per_epoch= len(train_samples*3), 
                                      validation_data=validation_generator, 
                                      callbacks = [tfBoard],
                                      nb_val_samples=len(validation_samples), nb_epoch=10)
@@ -129,6 +167,13 @@ plt.title('model mean squared error loss')
 plt.ylabel('mean squared error loss')
 plt.xlabel('epoch')
 plt.legend(['training set', 'validation set'], loc='upper right')
+plt.show()
+
+plt.figure()
+plt.plot(history_object.history['acc'])
+plt.title('model acc')
+plt.ylabel('acc')
+plt.xlabel('epoch')
 plt.show()
 
 
