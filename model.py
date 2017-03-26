@@ -32,26 +32,13 @@ dataSets = [
             "./dataSet/1_anti_normal_1/",
             "./dataSet/1_clock_normal_1/",
             "./dataSet/1_clock_normal_2/",
-            "./dataSet/1_anti_normal_2/",
-            
+            "./dataSet/1_anti_normal_2/",            
             "./dataSet/1_clock_recover_3/",
-#            "./dataSet/1_clock_recover_1/",
-#            "./dataSet/1_anti_recover_3/",
-            
-###            "./dataSet/1_clock_recover_2/",
-###            "./dataSet/1_anti_recover_2/",
-            
-#            "./dataSet/1_clock_curves_1/",
-##            "./dataSet/1_anti_curves_1/",
-#            
-#            "./dataSet/2_clock_normal_1/",
-#            "./dataSet/2_anti_normal_1/",  
-#            "./dataSet/2_clock_normal_2/",
-#            "./dataSet/2_anti_normal_2/"     
             ]
 
 samples = []
 
+# add the data points in the csv
 def addFiles(folderPath):  
     with open(folderPath+'driving_log.csv') as csvfile:
         reader = csv.reader(csvfile)
@@ -59,7 +46,7 @@ def addFiles(folderPath):
             samples.append(line+[folderPath])
 
 
-
+# loop all paths
 for path in dataSets:
     addFiles(path)
         
@@ -85,6 +72,9 @@ def prepareSamples(samples, training = True):
 
 
 def dataGenerator(samples, batch_size=32, training=True):    
+    '''
+    data generator with input from prepareSamples. 
+    '''
     num_samples = len(samples)
     while 1: # Loop forever so the generator never terminates
         for offset in range(0, num_samples, batch_size):
@@ -105,8 +95,11 @@ def dataGenerator(samples, batch_size=32, training=True):
             y_train = np.array(angles)
             yield sklearn.utils.shuffle(X_train, y_train)
 
+
+# training validation split
 train_samples, validation_samples = train_test_split(samples, test_size=0.2)
 
+# preprocess the samples
 train_samples = prepareSamples(train_samples)
 validation_samples = prepareSamples(validation_samples, training=False)
 

@@ -2,6 +2,13 @@
 
 [![Demo video](https://img.youtube.com/vi/UZ4zafFSHQc/0.jpg)](https://www.youtube.com/watch?v=UZ4zafFSHQc)
 
+- how to run
+```sh
+# open unity stimulator
+python drive.py model.h5 run1
+python video.py run1 --fps 48
+```
+
 **Behavioral Cloning Project**
 
 The goals / steps of this project are the following:
