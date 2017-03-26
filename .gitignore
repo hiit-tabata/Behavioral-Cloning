@@ -10,3 +10,6 @@ tf_summary/
 ~history.p
 ~history.p
 dataSet
+logs
+run1
+examples
